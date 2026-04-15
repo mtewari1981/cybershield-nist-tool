@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberShield NIST CSF Risk Assessment Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f6fa;color:#1a1a2e;line-height:1.6}
+  .header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:2rem;text-align:center}
+  .header h1{font-size:1.6rem;font-weight:600;margin-bottom:0.25rem}
+  .header p{font-size:0.9rem;opacity:0.8}
+  .badge{display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:3px 12px;font-size:0.75rem;margin:0.5rem 4px 0}
+  .container{max-width:860px;margin:0 auto;padding:1.5rem}
+  .card{background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+  .step{display:none}
+  .step.active{display:block}
+  .step-indicator{display:flex;justify-content:center;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+  .step-dot{width:32px;height:32px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#999;background:#fff;transition:all 0.2s}
+  .step-dot.active{border-color:#2563eb;color:#2563eb}
+  .step-dot.done{background:#2563eb;border-color:#2563eb;color:#fff}
+  .function-header{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+  .function-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+  .fn-id{background:#eff6ff;color:#1d4ed8}
+  .fn-pr{background:#f0fdf4;color:#15803d}
+  .fn-de{background:#fefce8;color:#a16207}
+  .fn-rs{background:#fff7ed;color:#c2410c}
+  .fn-rc{background:#fdf4ff;color:#7e22ce}
+  h2{font-size:1.1rem;font-weight:600;color:#1a1a2e}
+  h3{font-size:0.95rem;font-weight:600;color:#374151;margin-bottom:0.5rem}
+  .subtitle{font-size:0.82rem;color:#6b7280;margin-top:2px}
+  .question-block{border:1px solid #e8eaf0;border-radius:8px;padding:1rem;margin-bottom:0.75rem;transition:border-color 0.2s}
+  .question-block:hover{border-color:#bfdbfe}
+  .question-text{font-size:0.88rem;color:#374151;margin-bottom:0.6rem;font-weight:500}
+  .options{display:flex;flex-direction:column;gap:6px}
+  .opt{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:6px;transition:background 0.15s}
+  .opt:hover{background:#f3f4f6}
+  .opt input{accent-color:#2563eb;width:15px;height:15px;flex-shrink:0}
+  .opt label{font-size:0.83rem;color:#4b5563;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-size:0.9rem;font-weight:500;cursor:pointer;border:none;transition:all 0.2s}
+  .btn-primary{background:#2563eb;color:#fff}
+  .btn-primary:hover{background:#1d4ed8}
+  .btn-secondary{background:#fff;color:#374151;border:1px solid #d1d5db}
+  .btn-secondary:hover{background:#f9fafb}
+  .btn-success{background:#15803d;color:#fff}
+  .btn-success:hover{background:#166534}
+  .btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;flex-wrap:wrap;gap:10px}
+  .progress-bar-wrap{background:#e8eaf0;border-radius:99px;height:6px;margin-bottom:1.25rem}
+  .progress-bar{background:#2563eb;height:6px;border-radius:99px;transition:width 0.4s}
+  .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+  .score-card{border-radius:10px;padding:1rem;text-align:center}
+  .score-num{font-size:1.8rem;font-weight:700}
+  .score-label{font-size:0.75rem;margin-top:4px;font-weight:500}
+  .sc-green{background:#f0fdf4;color:#15803d}
+  .sc-yellow{background:#fefce8;color:#a16207}
+  .sc-red{background:#fef2f2;color:#dc2626}
+  .sc-blue{background:#eff6ff;color:#1d4ed8}
+  .sc-purple{background:#fdf4ff;color:#7e22ce}
+  .sc-gray{background:#f3f4f6;color:#374151}
+  .gap-item{border-left:4px solid #ef4444;background:#fef2f2;border-radius:0 8px 8px 0;padding:0.9rem 1rem;margin-bottom:0.75rem}
+  .gap-item.medium{border-left-color:#f59e0b;background:#fffbeb}
+  .gap-item.low{border-left-color:#3b82f6;background:#eff6ff}
+  .gap-title{font-size:0.88rem;font-weight:600;color:#1a1a2e;margin-bottom:4px}
+  .gap-detail{font-size:0.8rem;color:#4b5563;margin-bottom:6px}
+  .gap-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .tag{font-size:0.72rem;padding:2px 8px;border-radius:99px;font-weight:500}
+  .tag-red{background:#fee2e2;color:#b91c1c}
+  .tag-amber{background:#fef3c7;color:#92400e}
+  .tag-blue{background:#dbeafe;color:#1e40af}
+  .tag-green{background:#dcfce7;color:#166534}
+  .roadmap-item{display:flex;gap:14px;margin-bottom:1rem}
+  .roadmap-timeline{display:flex;flex-direction:column;align-items:center}
+  .roadmap-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  .roadmap-line{width:2px;flex:1;background:#e5e7eb;margin-top:4px}
+  .roadmap-content{flex:1;padding-bottom:1rem}
+  .roadmap-period{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+  .roadmap-title{font-size:0.88rem;font-weight:600;color:#1a1a2e;margin-bottom:3px}
+  .roadmap-desc{font-size:0.8rem;color:#6b7280}
+  .resource-item{display:flex;align-items:flex-start;gap:10px;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px}
+  .resource-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .resource-title{font-size:0.85rem;font-weight:600;color:#1d4ed8;text-decoration:none}
+  .resource-title:hover{text-decoration:underline}
+  .resource-desc{font-size:0.78rem;color:#6b7280;margin-top:2px}
+  .org-input{width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;font-family:inherit;margin-top:6px}
+  .org-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+  select.org-input{background:#fff;cursor:pointer}
+  .intro-hero{text-align:center;padding:1.5rem 1rem}
+  .intro-hero .icon{font-size:3rem;margin-bottom:1rem}
+  .intro-hero h2{font-size:1.3rem;font-weight:700;margin-bottom:0.5rem}
+  .intro-hero p{font-size:0.9rem;color:#6b7280;max-width:560px;margin:0 auto 1.25rem}
+  .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:1.25rem 0}
+  .feature-item{background:#f8fafc;border-radius:8px;padding:0.9rem;text-align:center}
+  .feature-item .fi{font-size:1.4rem;margin-bottom:6px}
+  .feature-item p{font-size:0.8rem;color:#374151;font-weight:500}
+  .overall-score-circle{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.25rem;border:5px solid}
+  .overall-num{font-size:1.8rem;font-weight:700}
+  .overall-label{font-size:0.7rem;font-weight:500}
+  .severity-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:0.8rem;font-weight:600}
+  @media(max-width:600px){.score-grid{grid-template-columns:repeat(2,1fr)}.btn-row{flex-direction:column}.btn{width:100%;justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡️ CyberShield NIST CSF Risk Assessment</h1>
+  <p>Free cybersecurity risk assessment, mitigation guidance & remediation roadmap</p>
+  <span class="badge">Healthcare</span>
+  <span class="badge">Energy & Utilities</span>
+  <span class="badge">NIST CSF 2.0 Aligned</span>
+  <span class="badge">CISA Recommended Controls</span>
+</div>
+
+<div class="container">
+
+  <!-- Step Indicator -->
+  <div class="step-indicator" id="stepIndicator">
+    <div class="step-dot active" id="dot0">1</div>
+    <div class="step-dot" id="dot1">ID</div>
+    <div class="step-dot" id="dot2">PR</div>
+    <div class="step-dot" id="dot3">DE</div>
+    <div class="step-dot" id="dot4">RS</div>
+    <div class="step-dot" id="dot5">RC</div>
+    <div class="step-dot" id="dot6">✓</div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+
+  <!-- STEP 0: Intro & Org Info -->
+  <div class="step active" id="step0">
+    <div class="card">
+      <div class="intro-hero">
+        <div class="icon">🏥⚡</div>
+        <h2>Is your organization cyber-ready?</h2>
+        <p>This free assessment evaluates your cybersecurity posture against the NIST Cybersecurity Framework 2.0 — the gold standard used by US federal agencies and CISA. Get a scored report with prioritized mitigation steps and a remediation roadmap in under 10 minutes.</p>
+        <div class="feature-grid">
+          <div class="feature-item"><div class="fi">📋</div><p>20 targeted questions</p></div>
+          <div class="feature-item"><div class="fi">🎯</div><p>Scored gap analysis</p></div>
+          <div class="feature-item"><div class="fi">🛠️</div><p>Mitigation guidance</p></div>
+          <div class="feature-item"><div class="fi">🗺️</div><p>Remediation roadmap</p></div>
+          <div class="feature-item"><div class="fi">📄</div><p>Downloadable PDF</p></div>
+          <div class="feature-item"><div class="fi">🔗</div><p>CISA/NIST resources</p></div>
+        </div>
+      </div>
+
+      <h3>Tell us about your organization</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:0.75rem">
+        <div>
+          <label style="font-size:0.83rem;font-weight:500;color:#374151">Organization name</label>
+          <input class="org-input" type="text" id="orgName" placeholder="e.g. Valley Regional Hospital">
+        </div>
+        <div>
+          <label style="font-size:0.83rem;font-weight:500;color:#374151">Sector</label>
+          <select class="org-input" id="orgSector">
+            <option value="">Select your sector</option>
+            <option value="healthcare">Healthcare (hospital, clinic, health system)</option>
+            <option value="energy">Energy & Utilities (power, water, gas)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.83rem;font-weight:500;color:#374151">Organization size</label>
+          <select class="org-input" id="orgSize">
+            <option value="">Select size</option>
+            <option value="small">Small (under 100 employees)</option>
+            <option value="medium">Medium (100–500 employees)</option>
+            <option value="large">Large (500+ employees)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.83rem;font-weight:500;color:#374151">Your role</label>
+          <input class="org-input" type="text" id="orgRole" placeholder="e.g. IT Manager, CISO, Admin">
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content:flex-end">
+        <button class="btn btn-primary" onclick="startAssessment()">Start Assessment →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEPS 1-5: Assessment Questions -->
+  <div class="step" id="step1">
+    <div class="card">
+      <div class="function-header">
+        <div class="function-icon fn-id">🔍</div>
+        <div><h2>Identify</h2><div class="subtitle">Asset management, risk assessment, governance</div></div>
+      </div>
+      <div id="questions-1"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(0)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(1)">Next: Protect →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="step2">
+    <div class="card">
+      <div class="function-header">
+        <div class="function-icon fn-pr">🛡️</div>
+        <div><h2>Protect</h2><div class="subtitle">Access control, awareness training, data security</div></div>
+      </div>
+      <div id="questions-2"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(2)">Next: Detect →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="step3">
+    <div class="card">
+      <div class="function-header">
+        <div class="function-icon fn-de">👁️</div>
+        <div><h2>Detect</h2><div class="subtitle">Anomaly detection, continuous monitoring, SIEM</div></div>
+      </div>
+      <div id="questions-3"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(3)">Next: Respond →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="step4">
+    <div class="card">
+      <div class="function-header">
+        <div class="function-icon fn-rs">🚨</div>
+        <div><h2>Respond</h2><div class="subtitle">Incident response, communications, analysis</div></div>
+      </div>
+      <div id="questions-4"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(4)">Next: Recover →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="step5">
+    <div class="card">
+      <div class="function-header">
+        <div class="function-icon fn-rc">♻️</div>
+        <div><h2>Recover</h2><div class="subtitle">Recovery planning, improvements, communications</div></div>
+      </div>
+      <div id="questions-5"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(4)">← Back</button>
+        <button class="btn btn-success" onclick="generateReport()">Generate My Report →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6: Results -->
+  <div class="step" id="step6">
+    <div class="card" id="reportCard">
+      <div style="text-align:center;margin-bottom:1.25rem">
+        <h2 style="margin-bottom:4px">Your Cybersecurity Risk Report</h2>
+        <div class="subtitle" id="reportSubtitle"></div>
+      </div>
+
+      <div id="overallScoreSection"></div>
+      <div class="score-grid" id="scoreGrid"></div>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:1.25rem 0">
+
+      <h3 style="margin-bottom:0.75rem">🚨 Gap Analysis & Prioritized Mitigations</h3>
+      <div id="gapSection"></div>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:1.25rem 0">
+
+      <h3 style="margin-bottom:0.75rem">🗺️ Remediation Roadmap</h3>
+      <div id="roadmapSection"></div>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:1.25rem 0">
+
+      <h3 style="margin-bottom:0.75rem">🔗 Free CISA & NIST Resources</h3>
+      <div id="resourceSection"></div>
+
+      <div style="background:#eff6ff;border-radius:8px;padding:1rem;margin-top:1.25rem;font-size:0.82rem;color:#1e40af">
+        <strong>About this assessment:</strong> Developed by CyberShield Consulting using the NIST Cybersecurity Framework 2.0 and CISA guidance for healthcare and critical infrastructure sectors. This tool is free and does not store your data. For a full cybersecurity risk assessment and remediation support, contact a qualified cybersecurity consultant.
+      </div>
+
+      <div class="btn-row" style="margin-top:1.25rem">
+        <button class="btn btn-secondary" onclick="resetTool()">← Start New Assessment</button>
+        <button class="btn btn-primary" onclick="downloadPDF()">📄 Download PDF Report</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:#9ca3af">
+  CyberShield Consulting · Free NIST CSF Risk Assessment Tool · Aligned with CISA Critical Infrastructure Guidance<br>
+  This tool does not collect or store any organizational data.
+</div>
+
+<script>
+const questions = {
+  1: [
+    {id:'q1_1', text:'Does your organization maintain a complete, up-to-date inventory of all hardware and software assets (including medical devices / OT systems)?', weight:3, function:'Identify', control:'ID.AM-1/2'},
+    {id:'q1_2', text:'Have you conducted a formal cybersecurity risk assessment in the past 12 months?', weight:4, function:'Identify', control:'ID.RA-1'},
+    {id:'q1_3', text:'Does your organization have a documented cybersecurity policy approved by senior leadership?', weight:3, function:'Identify', control:'ID.GV-1'},
+    {id:'q1_4', text:'Are third-party vendors and suppliers assessed for cybersecurity risk before being granted access to your systems?', weight:3, function:'Identify', control:'ID.SC-1'},
+  ],
+  2: [
+    {id:'q2_1', text:'Is Multi-Factor Authentication (MFA) enforced for all remote access and privileged accounts?', weight:5, function:'Protect', control:'PR.AC-7'},
+    {id:'q2_2', text:'Do employees receive cybersecurity awareness training at least annually?', weight:4, function:'Protect', control:'PR.AT-1'},
+    {id:'q2_3', text:'Is sensitive patient / operational data encrypted both at rest and in transit?', weight:4, function:'Protect', control:'PR.DS-1/2'},
+    {id:'q2_4', text:'Are software patches and security updates applied within 30 days of release?', weight:4, function:'Protect', control:'PR.IP-12'},
+  ],
+  3: [
+    {id:'q3_1', text:'Does your organization use a SIEM or centralized log management system to monitor for security events?', weight:4, function:'Detect', control:'DE.CM-1'},
+    {id:'q3_2', text:'Are network anomalies and unauthorized access attempts actively monitored 24/7?', weight:5, function:'Detect', control:'DE.CM-7'},
+    {id:'q3_3', text:'Is endpoint detection and response (EDR) software deployed on all endpoints?', weight:4, function:'Detect', control:'DE.CM-4'},
+    {id:'q3_4', text:'Are security alerts triaged and investigated in a timely manner (within defined SLAs)?', weight:3, function:'Detect', control:'DE.AE-5'},
+  ],
+  4: [
+    {id:'q4_1', text:'Does your organization have a documented and tested Incident Response Plan (IRP)?', weight:5, function:'Respond', control:'RS.RP-1'},
+    {id:'q4_2', text:'Has your incident response plan been tested via a tabletop exercise or simulation in the past 12 months?', weight:4, function:'Respond', control:'RS.RP-1'},
+    {id:'q4_3', text:'Are there defined escalation paths and communication procedures for notifying leadership and regulators during an incident?', weight:3, function:'Respond', control:'RS.CO-2'},
+    {id:'q4_4', text:'Are lessons learned from past incidents documented and used to improve security controls?', weight:3, function:'Respond', control:'RS.IM-1'},
+  ],
+  5: [
+    {id:'q5_1', text:'Does your organization have a Business Continuity / Disaster Recovery (BC/DR) plan specific to cybersecurity incidents?', weight:5, function:'Recover', control:'RC.RP-1'},
+    {id:'q5_2', text:'Are backups performed regularly, stored offline or in immutable storage, and tested for restoration?', weight:5, function:'Recover', control:'RC.RP-1'},
+    {id:'q5_3', text:'Has the recovery plan been tested in the past 12 months to confirm recovery time objectives (RTOs) are achievable?', weight:4, function:'Recover', control:'RC.RP-1'},
+    {id:'q5_4', text:'Is there a communication plan for notifying patients, customers, or the public following a cybersecurity incident?', weight:3, function:'Recover', control:'RC.CO-1'},
+  ]
+};
+
+const opts = ['Yes — fully implemented','Partially implemented','No — not yet in place','Not sure / Unknown'];
+const optScores = [3,1.5,0,0.5];
+
+const mitigations = {
+  q1_1:{sev:'high',title:'Asset inventory gap',detail:'Without a complete asset inventory, you cannot protect what you cannot see. Unknown assets are a primary attack vector.',steps:['Deploy an automated asset discovery tool (e.g., Nmap scans, Tenable.io)','Include all IoT, medical devices, and OT systems in scope','Review and update inventory quarterly'],timeline:'0–30 days',tags:['Critical','ID.AM-1']},
+  q1_2:{sev:'high',title:'No recent risk assessment',detail:'Annual risk assessments are required under HIPAA Security Rule and NERC CIP standards. Gaps in risk visibility lead to unaddressed vulnerabilities.',steps:['Engage a qualified assessor or use CISA\'s free assessment services','Map findings to NIST CSF controls','Prioritize remediation by risk level'],timeline:'0–60 days',tags:['HIPAA Required','NERC CIP']},
+  q1_3:{sev:'medium',title:'Missing cybersecurity policy',detail:'Without formal policy, security decisions are inconsistent and compliance cannot be demonstrated to regulators or auditors.',steps:['Draft an Information Security Policy using NIST SP 800-53 as a template','Get board/executive sign-off','Communicate and train all staff'],timeline:'30–60 days',tags:['Governance','Compliance']},
+  q1_4:{sev:'high',title:'Third-party vendor risk unmanaged',detail:'Supply chain attacks (e.g., SolarWinds, MOVEit) are a top CISA threat. Unvetted vendors with system access are a critical risk.',steps:['Implement a vendor risk assessment questionnaire','Include cybersecurity clauses in all vendor contracts (BAA for healthcare)','Review critical vendors annually'],timeline:'30–90 days',tags:['Supply Chain','Critical']},
+  q2_1:{sev:'critical',title:'MFA not enforced',detail:'Over 80% of breaches involve compromised credentials. MFA is the single most effective control to prevent unauthorized access.',steps:['Enable MFA immediately for all VPN, email, and admin accounts','Use authenticator apps over SMS where possible','Enforce via conditional access policies (Azure AD, Okta)'],timeline:'0–14 days',tags:['Critical','Quick Win','PR.AC-7']},
+  q2_2:{sev:'high',title:'Security awareness training gap',detail:'Phishing is the #1 initial access vector in healthcare breaches. Untrained staff are the most exploited vulnerability.',steps:['Enroll all staff in annual security awareness training','Run quarterly phishing simulation campaigns','Provide role-specific training for IT and clinical staff'],timeline:'0–30 days',tags:['HIPAA Required','High Impact']},
+  q2_3:{sev:'high',title:'Data not fully encrypted',detail:'Unencrypted patient or operational data exposes you to massive breach liability and regulatory penalties (HIPAA, NERC CIP).',steps:['Enable full disk encryption (BitLocker, FileVault) on all endpoints','Enforce TLS 1.2+ for all data in transit','Encrypt database fields containing PHI or operational data'],timeline:'30–60 days',tags:['HIPAA','Compliance']},
+  q2_4:{sev:'high',title:'Patching delays',detail:'Unpatched systems are the #2 cause of ransomware attacks. Healthcare and energy orgs are prime ransomware targets.',steps:['Implement a formal patch management process with 30-day SLA','Use automated patch deployment tools (WSUS, Intune, etc.)','Prioritize CISA KEV (Known Exploited Vulnerabilities) catalog patches immediately'],timeline:'0–30 days',tags:['Ransomware Prevention','Critical']},
+  q3_1:{sev:'high',title:'No SIEM / centralized logging',detail:'Without centralized log management, threats go undetected until it\'s too late. Average detection time without a SIEM is 200+ days.',steps:['Deploy a SIEM solution (Splunk, Microsoft Sentinel, or CISA\'s free Albert sensor)','Ensure all critical systems forward logs to the SIEM','Define alert thresholds and triage procedures'],timeline:'60–90 days',tags:['Detection','DE.CM-1']},
+  q3_2:{sev:'critical',title:'No 24/7 threat monitoring',detail:'Attackers exploit off-hours. Healthcare and energy orgs without 24/7 monitoring experience significantly worse breach outcomes.',steps:['Engage a Managed Security Service Provider (MSSP) for 24/7 SOC coverage','Define escalation procedures for after-hours alerts','Ensure network traffic analysis is included in monitoring scope'],timeline:'30–60 days',tags:['Critical','SOC']},
+  q3_3:{sev:'high',title:'EDR not fully deployed',detail:'Traditional antivirus cannot detect modern ransomware and fileless attacks. EDR is the minimum standard for endpoint protection.',steps:['Deploy EDR on 100% of endpoints (CrowdStrike, SentinelOne, Microsoft Defender for Endpoint)','Enable real-time behavioral detection','Integrate EDR telemetry with your SIEM'],timeline:'30–60 days',tags:['Endpoint','Ransomware']},
+  q3_4:{sev:'medium',title:'Alert triage SLAs undefined',detail:'Without triage SLAs, critical alerts may be missed or delayed, increasing breach impact and dwell time.',steps:['Define SLA tiers: Critical (15 min), High (1 hr), Medium (4 hr)','Assign triage ownership to specific roles','Track mean time to detect (MTTD) and mean time to respond (MTTR)'],timeline:'30–60 days',tags:['Process','KPIs']},
+  q4_1:{sev:'critical',title:'No Incident Response Plan',detail:'Organizations without an IRP take 55% longer to contain breaches, resulting in significantly higher costs and regulatory exposure.',steps:['Develop an IRP using NIST SP 800-61 as a template','Define roles: Incident Commander, Legal, Communications, IT leads','Include sector-specific requirements (HHS breach notification for healthcare, NERC CIP-008 for energy)'],timeline:'0–30 days',tags:['Critical','RS.RP-1']},
+  q4_2:{sev:'high',title:'IRP not tested',detail:'An untested plan is not a plan. Tabletop exercises reveal critical gaps before a real incident occurs.',steps:['Schedule a tabletop exercise with all key stakeholders within 90 days','Use a realistic ransomware or data breach scenario','Document findings and update the IRP after each exercise'],timeline:'60–90 days',tags:['Tabletop','Readiness']},
+  q4_3:{sev:'medium',title:'Unclear escalation procedures',detail:'Delayed or incorrect notifications during an incident can result in regulatory violations and reputational damage.',steps:['Define a clear notification matrix: who contacts whom and when','Include regulatory timelines (HIPAA: 60-day breach notification; NERC: immediate reporting)','Prepare breach notification templates in advance'],timeline:'30–60 days',tags:['Compliance','Communications']},
+  q4_4:{sev:'medium',title:'No lessons-learned process',detail:'Organizations that fail to learn from incidents repeat the same mistakes, leading to recurring breaches.',steps:['Conduct post-incident reviews within 2 weeks of any incident','Document root cause, timeline, and remediation actions','Track open action items to closure'],timeline:'Ongoing',tags:['Continuous Improvement']},
+  q5_1:{sev:'critical',title:'No BC/DR plan for cyber incidents',detail:'Ransomware can take a hospital or utility offline for weeks. Without a BC/DR plan, recovery is chaotic and prolonged.',steps:['Develop a Cyber Incident Recovery Plan separate from traditional DR','Include manual workarounds for critical systems (downtime procedures for healthcare)','Align with CISA\'s Cyber Essentials for critical infrastructure'],timeline:'0–60 days',tags:['Critical','RC.RP-1']},
+  q5_2:{sev:'critical',title:'Backup gaps identified',detail:'Over 70% of ransomware victims who paid had inadequate backups. Offline, immutable backups are non-negotiable.',steps:['Implement 3-2-1 backup strategy (3 copies, 2 media types, 1 offsite/offline)','Test backup restoration monthly — not just backup completion','Store at least one copy in immutable/air-gapped storage'],timeline:'0–30 days',tags:['Critical','Quick Win','Ransomware']},
+  q5_3:{sev:'high',title:'Recovery plan not tested',detail:'Recovery Time Objectives (RTOs) that have never been tested are guesses. A failed restoration during a real incident is catastrophic.',steps:['Conduct a full restoration test from backup within 90 days','Validate RTOs and RPOs against actual recovery performance','Document gaps and update recovery procedures'],timeline:'60–90 days',tags:['Resilience','Testing']},
+  q5_4:{sev:'medium',title:'No public communication plan',detail:'Poor post-breach communication damages trust, triggers regulatory scrutiny, and can worsen patient/customer outcomes.',steps:['Prepare breach communication templates for patients, media, and regulators','Designate a single spokesperson and backup','Coordinate with legal counsel before any public statement'],timeline:'30–60 days',tags:['Communications','PR']},
+};
+
+const resources = [
+  {icon:'🏛️',title:'CISA Free Cybersecurity Services & Tools',url:'https://www.cisa.gov/resources-tools/resources/free-cybersecurity-services-and-tools',desc:'Free vulnerability scanning, training, and assessment services for critical infrastructure organizations.'},
+  {icon:'📋',title:'NIST Cybersecurity Framework 2.0',url:'https://www.nist.gov/cyberframework',desc:'The official NIST CSF 2.0 framework documentation, profiles, and implementation guidance.'},
+  {icon:'🏥',title:'HHS 405(d) Healthcare Cybersecurity Practices',url:'https://405d.hhs.gov/',desc:'HHS guidance specifically for healthcare organizations on cybersecurity best practices aligned with HIPAA.'},
+  {icon:'⚡',title:'CISA ICS/OT Cybersecurity Guidance',url:'https://www.cisa.gov/topics/industrial-control-systems',desc:'Critical resources for energy and utility operators on securing industrial control systems.'},
+  {icon:'🚨',title:'CISA Known Exploited Vulnerabilities Catalog',url:'https://www.cisa.gov/known-exploited-vulnerabilities-catalog',desc:'Authoritative source of vulnerabilities actively exploited in the wild — patch these first.'},
+  {icon:'📖',title:'NIST SP 800-61 Incident Response Guide',url:'https://www.nist.gov/publications/computer-security-incident-handling-guide',desc:'The definitive guide for building and testing your incident response capability.'},
+];
+
+let answers = {};
+let currentStep = 0;
+
+function renderQuestions(step){
+  const qs = questions[step];
+  const container = document.getElementById('questions-'+step);
+  container.innerHTML = qs.map(q=>`
+    <div class="question-block">
+      <div class="question-text">${q.text} <span style="font-size:0.75rem;color:#9ca3af">[${q.control}]</span></div>
+      <div class="options">
+        ${opts.map((o,i)=>`
+          <label class="opt">
+            <input type="radio" name="${q.id}" value="${i}" ${answers[q.id]==i?'checked':''} onchange="answers['${q.id}']=parseInt(this.value)">
+            <label style="cursor:pointer;font-size:0.83rem;color:#4b5563">${o}</label>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function startAssessment(){
+  const name = document.getElementById('orgName').value.trim();
+  const sector = document.getElementById('orgSector').value;
+  const size = document.getElementById('orgSize').value;
+  if(!name||!sector||!size){alert('Please complete all organization details before starting.');return;}
+  [1,2,3,4,5].forEach(s=>renderQuestions(s));
+  goStep(1);
+}
+
+function goStep(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  for(let i=0;i<=6;i++){
+    const d=document.getElementById('dot'+i);
+    if(!d)return;
+    d.classList.remove('active','done');
+    if(i<n)d.classList.add('done');
+    else if(i===n)d.classList.add('active');
+  }
+  const pct = n===0?0:n===6?100:Math.round((n/5)*85);
+  document.getElementById('progressBar').style.width=pct+'%';
+  currentStep=n;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function nextStep(step){
+  const qs=questions[step];
+  const unanswered=qs.filter(q=>answers[q.id]===undefined);
+  if(unanswered.length>0){alert('Please answer all questions before continuing.');return;}
+  goStep(step+1);
+}
+
+function calcScores(){
+  const funcs={1:{name:'Identify',max:0,score:0},2:{name:'Protect',max:0,score:0},3:{name:'Detect',max:0,score:0},4:{name:'Respond',max:0,score:0},5:{name:'Recover',max:0,score:0}};
+  [1,2,3,4,5].forEach(fn=>{
+    questions[fn].forEach(q=>{
+      const w=q.weight;
+      const a=answers[q.id]!==undefined?answers[q.id]:3;
+      funcs[fn].max+=w*3;
+      funcs[fn].score+=w*optScores[a];
+    });
+  });
+  return funcs;
+}
+
+function getColor(pct){
+  if(pct>=75)return{bg:'sc-green',hex:'#15803d',label:'Strong'};
+  if(pct>=50)return{bg:'sc-yellow',hex:'#a16207',label:'Moderate'};
+  if(pct>=25)return{bg:'sc-red',hex:'#dc2626',label:'At Risk'};
+  return{bg:'sc-red',hex:'#b91c1c',label:'Critical'};
+}
+
+function generateReport(){
+  const qs=questions[5];
+  const unanswered=qs.filter(q=>answers[q.id]===undefined);
+  if(unanswered.length>0){alert('Please answer all questions before generating your report.');return;}
+
+  const scores=calcScores();
+  const totalScore=Object.values(scores).reduce((a,b)=>a+b.score,0);
+  const totalMax=Object.values(scores).reduce((a,b)=>a+b.max,0);
+  const overallPct=Math.round((totalScore/totalMax)*100);
+  const overallColor=getColor(overallPct);
+  const orgName=document.getElementById('orgName').value||'Your Organization';
+  const sector=document.getElementById('orgSector').value;
+  const now=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  document.getElementById('reportSubtitle').textContent=`${orgName} · ${sector==='healthcare'?'Healthcare':'Energy & Utilities'} · Generated ${now}`;
+
+  // Overall score
+  document.getElementById('overallScoreSection').innerHTML=`
+    <div style="text-align:center;margin-bottom:1.25rem">
+      <div class="overall-score-circle" style="border-color:${overallColor.hex};color:${overallColor.hex}">
+        <div class="overall-num">${overallPct}%</div>
+        <div class="overall-label">${overallColor.label}</div>
+      </div>
+      <div style="font-size:0.85rem;color:#6b7280">Overall NIST CSF Maturity Score</div>
+    </div>
+  `;
+
+  // Function scores
+  const icons=['🔍','🛡️','👁️','🚨','♻️'];
+  const colors=['sc-blue','sc-green','sc-yellow','sc-red','sc-purple'];
+  document.getElementById('scoreGrid').innerHTML=Object.values(scores).map((f,i)=>{
+    const pct=Math.round((f.score/f.max)*100);
+    const c=getColor(pct);
+    return`<div class="score-card ${c.bg}"><div class="score-num">${pct}%</div><div class="score-label">${icons[i]} ${f.name}</div></div>`;
+  }).join('');
+
+  // Gaps
+  const gaps=[];
+  [1,2,3,4,5].forEach(fn=>{
+    questions[fn].forEach(q=>{
+      const a=answers[q.id];
+      if(a===undefined||a===0)return;
+      if(a>=2){
+        const m=mitigations[q.id];
+        if(m)gaps.push({...m,qid:q.id,score:optScores[a]});
+      }
+    });
+  });
+  gaps.sort((a,b)=>{const order={critical:0,high:1,medium:2,low:3};return order[a.sev]-order[b.sev];});
+
+  if(gaps.length===0){
+    document.getElementById('gapSection').innerHTML=`<div style="background:#f0fdf4;border-radius:8px;padding:1rem;color:#15803d;font-size:0.88rem;text-align:center">✅ Excellent! No critical gaps identified. Continue monitoring and testing your controls regularly.</div>`;
+  } else {
+    document.getElementById('gapSection').innerHTML=gaps.map(g=>{
+      const cls=g.sev==='critical'?'':g.sev==='high'?'':g.sev==='medium'?'medium':'low';
+      const sevColors={critical:'tag-red',high:'tag-red',medium:'tag-amber',low:'tag-blue'};
+      return`<div class="gap-item ${cls}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="tag ${sevColors[g.sev]}">${g.sev.toUpperCase()}</span>
+          <div class="gap-title">${g.title}</div>
+        </div>
+        <div class="gap-detail">${g.detail}</div>
+        <div style="font-size:0.8rem;font-weight:500;color:#374151;margin-bottom:4px">Recommended actions:</div>
+        ${g.steps.map(s=>`<div style="font-size:0.8rem;color:#4b5563;padding-left:12px;margin-bottom:2px">• ${s}</div>`).join('')}
+        <div class="gap-tags">${g.tags.map(t=>`<span class="tag tag-blue">${t}</span>`).join('')}<span class="tag tag-green">⏱ ${g.timeline}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Roadmap
+  const roadmap=[
+    {period:'Days 0–30',color:'#dc2626',dot:'#dc2626',title:'Critical & Quick Wins',desc:'Enable MFA on all accounts, begin backup verification, patch known exploited vulnerabilities (CISA KEV), initiate incident response plan draft.'},
+    {period:'Days 30–60',color:'#f59e0b',dot:'#f59e0b',title:'High-Priority Controls',desc:'Deploy EDR on all endpoints, enroll staff in security awareness training, implement vendor risk assessment process, complete data encryption review.'},
+    {period:'Days 60–90',color:'#2563eb',dot:'#2563eb',title:'Detection & Response Maturity',desc:'Deploy or tune SIEM/log management, define alert SLAs and triage procedures, conduct first tabletop exercise, complete and test backup restoration.'},
+    {period:'Days 90–180',color:'#15803d',dot:'#15803d',title:'Governance & Continuous Improvement',desc:'Formalize cybersecurity policy, complete full risk assessment, test BC/DR plan, establish quarterly review cycle, prepare for compliance audit.'},
+  ];
+  document.getElementById('roadmapSection').innerHTML=roadmap.map((r,i)=>`
+    <div class="roadmap-item">
+      <div class="roadmap-timeline">
+        <div class="roadmap-dot" style="background:${r.dot}"></div>
+        ${i<3?'<div class="roadmap-line"></div>':''}
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-period" style="color:${r.color}">${r.period}</div>
+        <div class="roadmap-title">${r.title}</div>
+        <div class="roadmap-desc">${r.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Resources
+  document.getElementById('resourceSection').innerHTML=resources.map(r=>`
+    <div class="resource-item">
+      <div class="resource-icon">${r.icon}</div>
+      <div>
+        <a class="resource-title" href="${r.url}" target="_blank">${r.title}</a>
+        <div class="resource-desc">${r.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  goStep(6);
+}
+
+function resetTool(){
+  answers={};
+  document.getElementById('orgName').value='';
+  document.getElementById('orgSector').value='';
+  document.getElementById('orgSize').value='';
+  document.getElementById('orgRole').value='';
+  goStep(0);
+}
+
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const orgName=document.getElementById('orgName').value||'Your Organization';
+  const sector=document.getElementById('orgSector').value==='healthcare'?'Healthcare':'Energy & Utilities';
+  const now=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const scores=calcScores();
+  const totalScore=Object.values(scores).reduce((a,b)=>a+b.score,0);
+  const totalMax=Object.values(scores).reduce((a,b)=>a+b.max,0);
+  const overallPct=Math.round((totalScore/totalMax)*100);
+
+  let y=20;
+  doc.setFillColor(26,26,46);
+  doc.rect(0,0,210,40,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.text('CyberShield NIST CSF Risk Assessment Report',105,16,{align:'center'});
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text(`${orgName} · ${sector} · ${now}`,105,26,{align:'center'});
+  doc.text('Free tool by CyberShield Consulting · Aligned with NIST CSF 2.0 & CISA Guidance',105,34,{align:'center'});
+
+  y=52;
+  doc.setTextColor(26,26,46);
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text(`Overall Maturity Score: ${overallPct}%`,20,y);
+  y+=6;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.setTextColor(100,100,120);
+  doc.text(`${overallPct>=75?'Strong':overallPct>=50?'Moderate':overallPct>=25?'At Risk':'Critical'} — Based on responses to 20 NIST CSF controls across 5 functions`,20,y);
+
+  y+=10;
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,26,46);
+  doc.text('Function Scores',20,y);y+=5;
+  const fnNames=['Identify','Protect','Detect','Respond','Recover'];
+  Object.values(scores).forEach((f,i)=>{
+    const pct=Math.round((f.score/f.max)*100);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(60,60,80);
+    doc.text(`${fnNames[i]}: ${pct}%  ${pct>=75?'✓ Strong':pct>=50?'→ Moderate':'✗ Needs Attention'}`,20,y);
+    y+=5;
+  });
+
+  y+=5;
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,26,46);
+  doc.text('Identified Gaps & Mitigations',20,y);y+=5;
+  const gaps=[];
+  [1,2,3,4,5].forEach(fn=>{
+    questions[fn].forEach(q=>{
+      const a=answers[q.id];
+      if(a>=2){const m=mitigations[q.id];if(m)gaps.push({...m});}
+    });
+  });
+  gaps.sort((a,b)=>{const o={critical:0,high:1,medium:2,low:3};return o[a.sev]-o[b.sev];});
+  gaps.forEach(g=>{
+    if(y>250){doc.addPage();y=20;}
+    doc.setFontSize(9);doc.setFont('helvetica','bold');
+    doc.setTextColor(g.sev==='critical'||g.sev==='high'?180:150,g.sev==='critical'?0:g.sev==='medium'?120:100,0);
+    doc.text(`[${g.sev.toUpperCase()}] ${g.title}`,20,y);y+=4;
+    doc.setFont('helvetica','normal');doc.setTextColor(60,60,80);
+    const lines=doc.splitTextToSize(g.detail,170);
+    doc.text(lines,20,y);y+=lines.length*4+1;
+    g.steps.forEach(s=>{
+      if(y>270){doc.addPage();y=20;}
+      const sl=doc.splitTextToSize('• '+s,165);
+      doc.text(sl,24,y);y+=sl.length*4;
+    });
+    y+=3;
+  });
+
+  y+=3;
+  if(y>240){doc.addPage();y=20;}
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,26,46);
+  doc.text('Remediation Roadmap',20,y);y+=5;
+  const rm=['Days 0–30: Enable MFA, verify backups, patch CISA KEV vulnerabilities, draft IRP.',
+    'Days 30–60: Deploy EDR, run security awareness training, encrypt sensitive data.',
+    'Days 60–90: Deploy/tune SIEM, run tabletop exercise, test backup restoration.',
+    'Days 90–180: Formalize policy, complete full risk assessment, prepare compliance audit.'];
+  rm.forEach(r=>{
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(60,60,80);
+    const rl=doc.splitTextToSize(r,170);doc.text(rl,20,y);y+=rl.length*5+1;
+  });
+
+  y+=3;
+  doc.setFontSize(8);doc.setTextColor(120,120,140);
+  doc.text('This report was generated by the CyberShield Free NIST CSF Risk Assessment Tool.',20,y);y+=4;
+  doc.text('For a full cybersecurity assessment and remediation support, contact a qualified cybersecurity consultant.',20,y);
+
+  doc.save(`CyberShield_NIST_Assessment_${orgName.replace(/\s+/g,'_')}.pdf`);
+}
+</script>
+</body>
+</html>
